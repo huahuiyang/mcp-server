@@ -1,6 +1,7 @@
 import fnmatch
 import io
 from pdb import run
+from pydoc import describe
 from socket import timeout
 from typing import Required, Union, Optional, List
 import datetime
@@ -1440,3 +1441,84 @@ def get_vefaas_application_template(template_id: str, destination_dir: str):
 
     except Exception as e:
         raise ValueError(f"Failed to download and extract application template: {str(e)}")
+
+
+@mcp.prompt(description="""deploy local code to vefaas function
+""")
+def deploy_faas(function_id: str, local_folder_path: str, region: str = None, local_folder_exclude: List[str] = None):
+    """
+    部署本地代码到veFaaS函数
+    
+    Args:
+    - function_id: veFaaS函数ID
+    - local_folder_path: 本地代码文件夹路径
+    - region: 函数所在区域（默认为None，会使用默认区域）
+    - local_folder_exclude: 上传时需要排除的文件/文件夹模式列表
+    
+    Returns:
+    - 部署结果信息
+    """
+    try:
+        # 1. 验证区域
+        region = validate_and_set_region(region)
+        
+        # 2. 上传代码到函数
+        logger.info(f"开始上传代码到函数 {function_id}（区域：{region}）")
+        upload_result = upload_code(
+            function_id=function_id,
+            region=region,
+            local_folder_path=local_folder_path,
+            local_folder_exclude=local_folder_exclude
+        )
+        
+        upload_data = json.loads(upload_result)
+        logger.info(f"代码上传成功：{upload_data['code_upload_callback']}")
+        
+        # 3. 检查依赖安装状态（如果有）
+        dependency_info = upload_data.get('dependency', {})
+        if dependency_info.get('should_check_dependency_status', False):
+            logger.info("正在检查依赖安装状态...")
+            dep_status = poll_dependency_install_task_status(
+                function_id=function_id,
+                region=region
+            )
+            if isinstance(dep_status, dict) and dep_status.get('status', {}).get('Result', {}).get('Status') != 'Succeeded':
+                raise ValueError(f"依赖安装失败：{dep_status}")
+            logger.info("依赖安装成功")
+        
+        # 4. 发布函数
+        logger.info(f"开始发布函数 {function_id}")
+        release_result = release_function(function_id=function_id, region=region)
+        logger.info(release_result)
+        
+        # 5. 检查发布状态
+        logger.info("正在检查函数发布状态...")
+        release_status = poll_function_release_status(function_id=function_id, region=region)
+        
+        if hasattr(release_status, 'status') and release_status.status == 'succeeded':
+            # 构建函数平台链接
+            platform_url = f"https://console.volcengine.com/vefaas/function/detail?functionId={function_id}&region={region}"
+            result = {
+                "function_id": function_id,
+                "region": region,
+                "status": "succeeded",
+                "message": "代码部署成功",
+                "platform_url": platform_url
+            }
+            logger.info(f"函数 {function_id} 部署成功")
+        else:
+            result = {
+                "function_id": function_id,
+                "region": region,
+                "status": "failed",
+                "message": f"函数发布失败: {release_status}"
+            }
+            logger.error(f"函数 {function_id} 部署失败")
+            raise ValueError(f"函数发布失败: {release_status}")
+        
+        return json.dumps(result, ensure_ascii=False, indent=2)
+        
+    except Exception as e:
+        error_message = f"部署本地代码到veFaaS函数失败: {str(e)}"
+        logger.error(error_message)
+        raise ValueError(error_message)
