@@ -1465,7 +1465,7 @@ def deploy_vefaas(
     code_source_hint: Optional[str] = None,
 ):
     """
-    Generate deployment instructions for a veFaaS function.
+    Generate a new deployment instructions for a veFaaS function.
 
     Args:
         function_id: Target veFaaS function ID.
