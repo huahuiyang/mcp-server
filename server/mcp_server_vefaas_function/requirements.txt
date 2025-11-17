@@ -45,13 +45,13 @@ mcp==1.9.4
     # via mcp-server-vefaas-function (pyproject.toml)
 pycryptodomex==3.23.0
     # via pyzipper
-pydantic==2.11.4
+pydantic==2.11.7
     # via
     #   mcp
     #   pydantic-settings
 pydantic-core==2.33.2
     # via pydantic
-pydantic-settings==2.9.1
+pydantic-settings==2.10.1
     # via mcp
 python-dateutil==2.9.0.post0
     # via volcengine-python-sdk
