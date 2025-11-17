@@ -41,7 +41,7 @@ jsonschema==4.25.0
     # via mcp
 jsonschema-specifications==2025.4.1
     # via jsonschema
-mcp==1.12.3
+mcp==1.9.4
     # via mcp-server-vefaas-function (pyproject.toml)
 pycryptodomex==3.23.0
     # via pyzipper
