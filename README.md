@@ -259,3 +259,7 @@ MCP Server列表 与 **[火山引擎大模型生态广场](https://www.volcengin
 ## License
 
 volcengine/mcp-server is licensed under the [MIT License](https://github.com/volcengine/mcp-server/blob/main/LICENSE).
+
+---
+
+*Last updated: 2026-05-08*
